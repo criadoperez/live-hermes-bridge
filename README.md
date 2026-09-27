@@ -28,12 +28,18 @@ One bridge serves many agents: pick the backend per call in `backends.yaml`.
 ## Quick start
 
 ```bash
+cp .env.example .env            # fill in OPENAI_API_KEY + backend bearers
+cp backends.yaml.example backends.yaml   # set base_url (+ model if named)
+./run.sh                        # one command: loads .env, checks deps, starts
+```
+
+Or manually:
+
+```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env            # fill in OPENAI_API_KEY + backend bearers
-cp backends.yaml.example backends.yaml
 export $(grep -v '^#' .env | xargs)   # or use your preferred env loader
-python3 -m live_hermes_bridge.server
+python3 -m live_hermes_bridge.server  # from an installed package or with src/ on PYTHONPATH
 ```
 
 Open http://127.0.0.1:8000, choose a backend, Start conversation, allow

@@ -17,5 +17,8 @@ dependencies = [
   "websockets>=14.0",
 ]
 
+[project.scripts]
+live-hermes-bridge = "live_hermes_bridge.server:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
