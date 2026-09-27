@@ -107,7 +107,7 @@ document.getElementById("stop").onclick = () => {
   if (pc) pc.close();
   pc = null;
   document.getElementById("stop").disabled = true;
-  log("Hung up. Audio stopped; close the Live session in the bridge log if needed.");
+  log("Hung up. The Live session ends when the connection closes.");
 };
 </script>
 </body>

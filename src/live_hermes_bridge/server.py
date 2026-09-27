@@ -57,6 +57,24 @@ def _snapshot(session: dict) -> str:
     return tail
 
 
+def _quiet_sideband_close(task: asyncio.Task) -> None:
+    """Swallow the expected close at hangup; log real failures."""
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        pass
+    except Exception as exc:
+        # The ConnectionClosed* family is the normal hangup path: when the
+        # browser closes WebRTC, OpenAI closes the sideband socket too.
+        if type(exc).__name__.startswith("ConnectionClosed"):
+            return
+        import logging
+
+        logging.getLogger("live_hermes_bridge").warning(
+            "sideband task failed: %r", exc
+        )
+
+
 async def _handle_delegation(session: dict, delegation_id: str) -> None:
     """Run one delegated turn against Hermes, send the result back to Live."""
     st = get_settings()
@@ -143,7 +161,12 @@ async def start_session(payload: dict) -> dict:
     sideband = Sideband(st.openai_api_key, live_id, _on_live_event)
     session["sideband"] = sideband
     SESSIONS[app_id] = session
-    asyncio.create_task(sideband.run())
+    task = asyncio.create_task(sideband.run())
+    # Hangup ends the task with a normal socket close; without a consumer
+    # this surfaces as "Task exception was never retrieved". A done-callback
+    # that ignores the expected close keeps the log clean while still
+    # surfacing real errors.
+    task.add_done_callback(_quiet_sideband_close)
     return {
         "app_session_id": app_id,
         "live_session_id": live_id,

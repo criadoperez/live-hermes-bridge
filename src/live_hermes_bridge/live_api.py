@@ -8,6 +8,7 @@ import json
 import uuid
 
 import httpx
+from websockets.exceptions import ConnectionClosed
 
 LIVE_BASE = "https://api.openai.com/v1/live"
 SIDEBAND_URL = "wss://api.openai.com/v1/live/sessions/{session_id}/attach"
@@ -84,17 +85,26 @@ class Sideband:
 
     async def run(self) -> None:
         url = SIDEBAND_URL.format(session_id=self.live_session_id)
-        async with _connect(url, self.openai_key) as ws:
-            sender = asyncio.create_task(self._sender(ws))
-            try:
-                async for raw in ws:
-                    try:
-                        event = json.loads(raw)
-                    except json.JSONDecodeError:
-                        continue
-                    await self.on_event(self, event)
-            finally:
-                sender.cancel()
+        try:
+            async with _connect(url, self.openai_key) as ws:
+                sender = asyncio.create_task(self._sender(ws))
+                try:
+                    async for raw in ws:
+                        try:
+                            event = json.loads(raw)
+                        except json.JSONDecodeError:
+                            continue
+                        await self.on_event(self, event)
+                except ConnectionClosed:
+                    # Expected at hangup: OpenAI closes the sideband when the
+                    # primary connection ends (reason connection_lost or
+                    # remote_hangup). The Live session ends on OpenAI's side;
+                    # there is no extra close call for our bridge to make.
+                    pass
+                finally:
+                    sender.cancel()
+        except ConnectionClosed:
+            pass
 
     async def _sender(self, ws) -> None:
         while True:
