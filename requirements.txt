@@ -1,0 +1,8 @@
+fastapi>=0.115
+httpx>=0.28
+pyyaml>=6.0
+uvicorn>=0.30
+websockets>=14.0
+# openai>=3.12 provides typed Live helpers (optional; the bridge uses raw
+# HTTPS + websockets so it works on openai 2.x too).
+openai>=2.0

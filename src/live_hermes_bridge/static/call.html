@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 Alejandro Criado-Perez <alejandro@criadoperez.com>
+
+  Minimal WebRTC voice client for live-hermes-bridge.
+  Audio flows browser <-> OpenAI Live directly. The bridge server only
+  exchanges the SDP offer/answer, then serves the brain over a sideband.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>live-hermes-bridge</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  #log { border: 1px solid #ccc; min-height: 200px; padding: 0.5rem; white-space: pre-wrap; }
+  button { font-size: 1rem; padding: 0.5rem 1rem; margin-right: 0.5rem; }
+</style>
+</head>
+<body>
+<h1>live-hermes-bridge</h1>
+<p>
+  Backend:
+  <select id="backend"><option value="leonardo">leonardo</option></select>
+  <button id="start">Start conversation</button>
+  <button id="stop" disabled>Hang up</button>
+</p>
+<audio id="remote" autoplay></audio>
+<div id="log"></div>
+<script>
+const logEl = document.getElementById("log");
+const log = (m) => { logEl.textContent += m + "\n"; };
+let pc = null;
+
+async function waitIce(pc) {
+  if (pc.iceGatheringState === "complete") return;
+  await new Promise((resolve) => {
+    const check = () => {
+      if (pc.iceGatheringState === "complete") { pc.removeEventListener("icegatheringstatechange", check); resolve(); }
+    };
+    pc.addEventListener("icegatheringstatechange", check);
+    setTimeout(resolve, 3000);
+  });
+}
+
+document.getElementById("start").onclick = async () => {
+  log("Requesting microphone...");
+  const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+  pc = new RTCPeerConnection();
+  pc.ontrack = (e) => { document.getElementById("remote").srcObject = e.streams[0]; };
+  for (const t of mic.getTracks()) pc.addTrack(t, mic);
+  const dc = pc.createDataChannel("oai-events");
+  dc.onopen = () => log("Data channel open. Waiting for session.started...");
+  dc.onmessage = (e) => {
+    try {
+      const evt = JSON.parse(e.data);
+      if (evt.type === "session.started") log("Live session started. Speak.");
+      else if (evt.type === "session.input_transcript.delta") log("you: " + evt.delta);
+      else if (evt.type === "session.output_transcript.delta") log("agent: " + evt.delta);
+      else if (evt.type === "session.delegation.created") log("(working...)");
+      else if (evt.type === "error") log("Live error: " + JSON.stringify(evt.error));
+    } catch { /* ignore non-JSON */ }
+  };
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await waitIce(pc);
+  const backend = document.getElementById("backend").value;
+  log("Creating Live session via bridge...");
+  const resp = await fetch("/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ backend, sdp: pc.localDescription.sdp }),
+  });
+  if (!resp.ok) { log("Bridge failed: " + await resp.text()); return; }
+  const data = await resp.json();
+  await pc.setRemoteDescription({ type: "answer", sdp: data.sdp_answer });
+  log("Connected. App session " + data.app_session_id);
+  document.getElementById("stop").disabled = false;
+  window._appSession = data.app_session_id;
+};
+
+document.getElementById("stop").onclick = () => {
+  if (pc) pc.close();
+  pc = null;
+  document.getElementById("stop").disabled = true;
+  log("Hung up. Audio stopped; close the Live session in the bridge log if needed.");
+};
+</script>
+</body>
+</html>

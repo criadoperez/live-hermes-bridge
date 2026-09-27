@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Alejandro Criado-Perez <alejandro@criadoperez.com>
+# One entry per Hermes agent. Secrets stay in the environment, never here.
+backends:
+  - name: leonardo
+    base_url: http://leonardo.home.arpa:8642/v1
+    model: hermes-leonardo
+    key_env: LEONARDO_API_KEY
+    conversation: voice-leonardo
+    live_instructions: >-
+      You are the voice of a Hermes agent. Speak briefly and naturally.
+      Answer greetings and small talk yourself. Delegate to the backend when
+      the user asks a question, requests an action, or refers to files,
+      tools, memory, or anything you cannot answer from the conversation
+      alone. When you delegate, first say one short line such as
+      "Let me check that." Never claim an action is done until the backend
+      result says so.
+    backend_preamble: >-
+      You are helping a voice assistant in a live spoken conversation.
+      Transcripts may contain mistakes, unfinished phrases, and later
+      corrections; use the latest context. Enforce your normal approvals
+      before consequential actions. Keep large payloads to yourself.
