@@ -28,7 +28,7 @@ fi
 
 if ! "$PY" -c "import fastapi, httpx, yaml, websockets" 2>/dev/null; then
   echo "Installing dependencies into .venv..." >&2
-  /usr/bin/python3 -m venv .venv
+  "$(command -v python3)" -m venv .venv
   .venv/bin/pip install -q -r requirements.txt
   PY=.venv/bin/python
 fi
