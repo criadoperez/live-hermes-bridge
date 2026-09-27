@@ -22,7 +22,7 @@
 <h1>live-hermes-bridge</h1>
 <p>
   Backend:
-  <select id="backend"><option value="leonardo">leonardo</option></select>
+  <select id="backend"><option value="">loading…</option></select>
   <button id="start">Start conversation</button>
   <button id="stop" disabled>Hang up</button>
 </p>
@@ -32,6 +32,29 @@
 const logEl = document.getElementById("log");
 const log = (m) => { logEl.textContent += m + "\n"; };
 let pc = null;
+
+// One bridge serves many agents: populate the dropdown from the server.
+async function loadBackends() {
+  const sel = document.getElementById("backend");
+  try {
+    const resp = await fetch("/api/backends");
+    const data = await resp.json();
+    sel.textContent = "";
+    for (const name of data.backends) {
+      const opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    }
+    if (!data.backends.length) log("No backends configured. Edit backends.yaml.");
+  } catch {
+    sel.textContent = "";
+    const opt = document.createElement("option");
+    opt.value = "my-agent"; opt.textContent = "my-agent";
+    sel.appendChild(opt);
+    log("Could not reach bridge /api/backends; is the server running?");
+  }
+}
+loadBackends();
 
 async function waitIce(pc) {
   if (pc.iceGatheringState === "complete") return;

@@ -44,6 +44,23 @@ the mic. Serve over HTTPS or localhost so the browser grants mic access.
 `backends.yaml`: one entry per Hermes agent (`name`, `base_url`, `model`,
 `key_env`, `conversation`, `live_instructions`, `backend_preamble`).
 Bearer keys stay in the environment (`key_env`), never in the file.
+Give each backend its own variable, e.g.:
+
+```yaml
+backends:
+  - name: home-agent
+    base_url: http://agent-one:8642/v1
+    model: hermes-agent
+    key_env: HERMES_API_KEY_ONE
+    conversation: voice-home-agent
+  - name: office-agent
+    base_url: http://agent-two:8642/v1
+    model: hermes-agent
+    key_env: HERMES_API_KEY_TWO
+    conversation: voice-office-agent
+```
+
+The web page lists whatever the server reports on `/api/backends`.
 
 ## Status
 

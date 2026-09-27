@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Alejandro Criado-Perez <alejandro@criadoperez.com>
 # One entry per Hermes agent. Secrets stay in the environment, never here.
+# Copy to backends.yaml and adapt: duplicate the entry per agent, each with
+# its own name, base_url, model, key_env and conversation.
 backends:
-  - name: leonardo
-    base_url: http://leonardo.home.arpa:8642/v1
-    model: hermes-leonardo
-    key_env: LEONARDO_API_KEY
-    conversation: voice-leonardo
+  - name: my-agent
+    base_url: http://hermes-host:8642/v1
+    model: hermes-agent
+    key_env: HERMES_API_KEY
+    conversation: voice-my-agent
     live_instructions: >-
       You are the voice of a Hermes agent. Speak briefly and naturally.
       Answer greetings and small talk yourself. Delegate to the backend when
