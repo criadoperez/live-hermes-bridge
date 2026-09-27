@@ -39,6 +39,21 @@ python3 -m live_hermes_bridge.server
 Open http://127.0.0.1:8000, choose a backend, Start conversation, allow
 the mic. Serve over HTTPS or localhost so the browser grants mic access.
 
+## Minimal setup (3 lines)
+
+For one Hermes agent with the default model name, you only edit 3 lines:
+
+1. `backends.yaml` (copied from `backends.yaml.example`), 1 line:
+   `base_url: http://YOUR-HERMES-HOST:8642/v1`
+2. `.env` (copied from `.env.example`), 2 lines:
+   `OPENAI_API_KEY=...` (OpenAI project key with GPT-Live access)
+   `HERMES_API_KEY=...` (that agent's `API_SERVER_KEY`)
+
+Keep `name`, `model: hermes-agent`, and `conversation` from the example.
+Only change `model` if your agent advertises a different name on
+`GET /v1/models` (e.g. a named profile), and duplicate the entry per
+agent for multi-agent setups (see below).
+
 ## Configuration
 
 `backends.yaml`: one entry per Hermes agent (`name`, `base_url`, `model`,
