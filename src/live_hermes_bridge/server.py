@@ -18,7 +18,6 @@ import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from .config import Backend, Settings, load_settings

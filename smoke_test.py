@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, "src")
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 os.environ["OPENAI_API_KEY"] = "sk-test-placeholder"
 os.environ["LEONARDO_API_KEY"] = "bearer-test-placeholder"
@@ -17,7 +18,10 @@ from live_hermes_bridge.live_api import SIDEBAND_URL
 
 
 def main() -> None:
-    st = load_settings("backends.yaml.example")
+    # LHB_BACKENDS may point at the user's real file; tests use the example.
+    example = Path(__file__).resolve().parent / "backends.yaml.example"
+    os.environ["LHB_BACKENDS"] = str(example)
+    st = load_settings(example)
     assert "leonardo" in st.backends, "leonardo backend missing"
     b = st.backend("leonardo")
     assert b.base_url == "http://leonardo.home.arpa:8642/v1", b.base_url
@@ -50,7 +54,8 @@ def main() -> None:
 
     import live_hermes_bridge.server as srv
 
-    srv.settings = st
+    # Fresh settings from the example file; ignore any cached global.
+    srv.settings = None
     client = TestClient(srv.app)
     r = client.get("/health")
     assert r.status_code == 200 and r.json()["status"] == "ok", r.text

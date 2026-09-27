@@ -28,7 +28,7 @@ async def create_live_session(
         "session": {
             "model": "gpt-live-1",
             "instructions": instructions,
-            "voice": voice,
+            "audio": {"output": {"voice": voice}},
             "delegation": {"type": "client"},
         },
         "transport": {"type": "webrtc", "sdp": sdp_offer},
